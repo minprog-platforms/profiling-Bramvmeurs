@@ -1,6 +1,15 @@
+##############################################################
+# sukoku.py
+#
+# programmeer platform
+# Bram van Meurs
+# 14083701
+# 
+# Programma lost sukoku's op.
+# Het programma is op verschillende punten aangepast om het sneller te maken (zie: veranderingen) 
+##############################################################\
 from __future__ import annotations
 from typing import Iterable, Sequence
-
 
 class Sudoku:
     """A mutable sudoku puzzle."""
@@ -16,18 +25,13 @@ class Sudoku:
 
             self._grid.append(row)
 
+    # verandering: hij looped nu niet meer over alle waardes heen in een rij, maar past in 1 keer een waarde aan in de rij.
     def place(self, value: int, x: int, y: int) -> None:
         """Place value at x,y."""
-        row = self._grid[y]
-        new_row = ""
-
-        for i in range(9):
-            if i == x:
-                new_row += str(value)
-            else:
-                new_row += row[i]
-
-        self._grid[y] = new_row
+        lijst = list(self._grid[y])
+        lijst[x] = str(value)
+        lijst = "".join(lijst)
+        self._grid[y] = lijst
 
     def unplace(self, x: int, y: int) -> None:
         """Remove (unplace) a number at x,y."""
@@ -35,21 +39,15 @@ class Sudoku:
         new_row = row[:x] + "0" + row[x + 1:]
         self._grid[y] = new_row
 
+    # verandering: geeft nu in 1 keer het getal zonder over alle indexen heen te loopen
     def value_at(self, x: int, y: int) -> int:
         """Returns the value at x,y."""
-        value = -1
+        return int(self._grid[y][x])
 
-        for i in range(9):
-            for j in range(9):
-                if i == x and j == y:
-                    row = self._grid[y]
-                    value = int(row[x])
-
-        return value
-
+    # verandering: options is nu een set. Dit maakt het gebruik van de 'in' operator sneller
     def options_at(self, x: int, y: int) -> Iterable[int]:
         """Returns all possible values (options) at x,y."""
-        options = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        options: set = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
         # Remove all values from the row
         for value in self.row_values(y):
@@ -71,18 +69,18 @@ class Sudoku:
 
         return options
 
+    # verandering: als hij een nulwaarde tegenkomt returned hij nu meteen en hij checkt niet de hele tijd of next -1 is(want dat is altijd zo)
     def next_empty_index(self) -> tuple[int, int]:
         """
         Returns the next index (x,y) that is empty (value 0).
         If there is no empty spot, returns (-1,-1)
         """
         next_x, next_y = -1, -1
-
         for y in range(9):
             for x in range(9):
-                if self.value_at(x, y) == 0 and next_x == -1 and next_y == -1:
+                if self.value_at(x, y) == 0:
                     next_x, next_y = x, y
-
+                    return next_x, next_y
         return next_x, next_y
 
     def row_values(self, i: int) -> Iterable[int]:
@@ -97,7 +95,7 @@ class Sudoku:
     def column_values(self, i: int) -> Iterable[int]:
         """Returns all values at i-th column."""
         values = []
-
+        
         for j in range(9):
             values.append(self.value_at(i, j))
 
@@ -122,27 +120,16 @@ class Sudoku:
 
         return values
 
+    # verandering: gebruik nu 1 keer de next_empty_index functie en als er geen lege plekken zijn, weet je dat de sukoku is opgelost
     def is_solved(self) -> bool:
         """
         Returns True if and only if all rows, columns and blocks contain
         only the numbers 1 through 9. False otherwise.
         """
-        values = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        if self.next_empty_index() == (-1, -1):
+            return True
+        return False
 
-        result = True
-
-        for i in range(9):
-            for value in values:
-                if value not in self.column_values(i):
-                    result = False
-
-                if value not in self.row_values(i):
-                    result = False
-
-                if value not in self.block_values(i):
-                    result = False
-
-        return result
 
     def __str__(self) -> str:
         representation = ""
